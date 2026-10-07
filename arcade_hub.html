@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ретро Аркада - Мини-игры</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Press Start 2P & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        .arcade-glow {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+        }
+        .arcade-btn {
+            transition: all 0.2s ease;
+        }
+        .arcade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white">
+
+    <header class="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-3 rounded-xl shadow-lg arcade-glow">
+                    <i class="fa-solid fa-gamepad text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="pixel-font text-lg text-blue-400 tracking-wider">RETRO ARCADE</h1>
+                    <p class="text-xs text-slate-400">Мини-игры: Змейка, Пинг-Понг, Крестики-нолики</p>
+                </div>
+            </div>
+            <!-- Game Switcher Navigation -->
+            <nav class="flex gap-2 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+                <button onclick="switchGame('snake')" id="nav-snake" class="px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white transition shadow">
+                    <i class="fa-solid fa-worm mr-1.5"></i> Змейка
+                </button>
+                <button onclick="switchGame('pong')" id="nav-pong" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-table-tennis-paddle-ball mr-1.5"></i> Понг
+                </button>
+                <button onclick="switchGame('tictactoe')" id="nav-tictactoe" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-hashtag mr-1.5"></i> Крестики-Нолики
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 flex flex-col items-center justify-center my-6">
+
+        <!-- SNAKE GAME CONTAINER -->
+        <div id="game-snake" class="game-section w-full flex flex-col items-center">
+            <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full max-w-lg shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="pixel-font text-sm text-yellow-400 flex items-center gap-2">
+                        <i class="fa-solid fa-worm"></i> ЗМЕЙКА
+                    </h2>
+                    <div class="flex gap-4 text-sm font-bold bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">
+                        <span>Счет: <span id="snake-score" class="text-green-400">0</span></span>
+                        <span>Рекорд: <span id="snake-highscore" class="text-yellow-400">0</span></span>
+                    </div>
+                </div>
+
+                <div class="relative flex justify-center bg-slate-950 rounded-xl overflow-hidden border border-slate-800 p-2">
+                    <canvas id="snakeCanvas" width="400" height="400" class="rounded-lg bg-slate-900 max-w-full h-auto"></canvas>
+                    <div id="snake-overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 transition-opacity">
+                        <h3 class="pixel-font text-xl text-blue-400 mb-3">АРКАДНАЯ ЗМЕЙКА</h3>
+                        <p class="text-xs text-slate-300 mb-6 max-w-xs leading-relaxed">Управляйте стрелками на клавиатуре или кнопками ниже. Соберите как можно больше еды!</p>
+                        <button onclick="startSnakeGame()" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg pixel-font text-xs">
+                            ИГРАТЬ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Touch Controls for Snake -->
+                <div class="grid grid-cols-3 gap-2 mt-4 max-w-xs mx-auto md:hidden">
+                    <div></div>
+                    <button onclick="setSnakeDir('UP')" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-xl text-white active:bg-blue-600"><i class="fa-solid fa-arrow-up"></i></button>
+                    <div></div>
+                    <button onclick="setSnakeDir('LEFT')" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-xl text-white active:bg-blue-600"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button onclick="setSnakeDir('DOWN')" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-xl text-white active:bg-blue-600"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button onclick="setSnakeDir('RIGHT')" class="bg-slate-700 hover:bg-slate-600 p-4 rounded-xl text-white active:bg-blue-600"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PONG GAME CONTAINER -->
+        <div id="game-pong" class="game-section w-full hidden flex flex-col items-center">
+            <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full max-w-xl shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="pixel-font text-sm text-blue-400 flex items-center gap-2">
+                        <i class="fa-solid fa-table-tennis-paddle-ball"></i> ПИНГ-ПОНГ
+                    </h2>
+                    <div class="flex gap-4 text-sm font-bold bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">
+                        <span>Игрок: <span id="pong-score-player" class="text-green-400">0</span></span>
+                        <span>Бот: <span id="pong-score-ai" class="text-red-400">0</span></span>
+                    </div>
+                </div>
+
+                <div class="relative flex justify-center bg-slate-950 rounded-xl overflow-hidden border border-slate-800 p-2">
+                    <canvas id="pongCanvas" width="500" height="300" class="rounded-lg bg-slate-900 max-w-full h-auto"></canvas>
+                    <div id="pong-overlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 transition-opacity">
+                        <h3 class="pixel-font text-xl text-blue-400 mb-3">РЕТРО ПОНГ</h3>
+                        <p class="text-xs text-slate-300 mb-6 max-w-xs leading-relaxed">Двигайте ракетку мышкой, пальцем или клавишами W/S. Обыграйте робота!</p>
+                        <button onclick="startPongGame()" class="arcade-btn bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl shadow-lg pixel-font text-xs">
+                            НАЧАТЬ МАТЧ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TIC-TAC-TOE GAME CONTAINER -->
+        <div id="game-tictactoe" class="game-section w-full hidden flex flex-col items-center">
+            <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="pixel-font text-sm text-pink-400 flex items-center gap-2">
+                        <i class="fa-solid fa-hashtag"></i> КРЕСТИКИ-НОЛИКИ
+                    </h2>
+                    <div class="text-xs font-bold bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-purple-300" id="ttt-status">
+                        Ход: Игрок (X)
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center">
+                    <div class="grid grid-cols-3 gap-3 w-72 h-72 mb-4">
+                        <button onclick="makeTTTMove(0)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(1)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(2)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(3)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(4)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(5)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(6)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(7)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                        <button onclick="makeTTTMove(8)" class="ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition text-blue-400"></button>
+                    </div>
+                    <button onclick="resetTTT()" class="arcade-btn bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-6 rounded-xl shadow pixel-font text-xs">
+                        СБРОСИТЬ ИГРУ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900/60 border-t border-slate-800 text-center py-4 text-xs text-slate-500">
+        <p>&copy; 2026 Ретро Аркада. Все права защищены. Создано с любовью к классике.</p>
+    </footer>
+
+    <script>
+        // --- GAME SWITCHER ---
+        function switchGame(gameName) {
+            document.querySelectorAll('.game-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('game-' + gameName).classList.remove('hidden');
+
+            // Reset navigation styles
+            ['snake', 'pong', 'tictactoe'].forEach(name => {
+                const btn = document.getElementById('nav-' + name);
+                btn.className = name === gameName 
+                    ? "px-4 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white transition shadow"
+                    : "px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition";
+            });
+
+            // Pause / Stop states if switching
+            if (gameName !== 'snake') snakeRunning = false;
+            if (gameName !== 'pong') pongRunning = false;
+        }
+
+        // --- SNAKE GAME LOGIC ---
+        const snakeCanvas = document.getElementById('snakeCanvas');
+        const snakeCtx = snakeCanvas.getContext('2d');
+        const grid = 20;
+        let snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
+        let food = {x: 0, y: 0};
+        let dx = grid;
+        let dy = 0;
+        let snakeScore = 0;
+        let snakeHighscore = localStorage.getItem('snake_highscore') || 0;
+        let snakeRunning = false;
+        let nextDirection = 'RIGHT';
+
+        document.getElementById('snake-highscore').innerText = snakeHighscore;
+
+        function startSnakeGame() {
+            snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
+            dx = grid;
+            dy = 0;
+            snakeScore = 0;
+            document.getElementById('snake-score').innerText = snakeScore;
+            document.getElementById('snake-overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('snake-overlay').style.display = 'none', 300);
+            createFood();
+            snakeRunning = true;
+            mainSnakeLoop();
+        }
+
+        function mainSnakeLoop() {
+            if (!snakeRunning) return;
+            setTimeout(() => {
+                clearSnakeCanvas();
+                drawFood();
+                moveSnake();
+                drawSnake();
+                if (checkSnakeGameOver()) {
+                    handleSnakeGameOver();
+                    return;
+                }
+                mainSnakeLoop();
+            }, 100);
+        }
+
+        function clearSnakeCanvas() {
+            snakeCtx.fillStyle = '#090d16';
+            snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+        }
+
+        function drawSnake() {
+            snake.forEach((part, index) => {
+                snakeCtx.fillStyle = index === 0 ? '#3b82f6' : '#60a5fa';
+                snakeCtx.shadowColor = '#3b82f6';
+                snakeCtx.shadowBlur = index === 0 ? 10 : 0;
+                snakeCtx.fillRect(part.x, part.y, grid - 2, grid - 2);
+            });
+            snakeCtx.shadowBlur = 0;
+        }
+
+        function moveSnake() {
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                snakeScore += 10;
+                document.getElementById('snake-score').innerText = snakeScore;
+                if (snakeScore > snakeHighscore) {
+                    snakeHighscore = snakeScore;
+                    localStorage.setItem('snake_highscore', snakeHighscore);
+                    document.getElementById('snake-highscore').innerText = snakeHighscore;
+                }
+                createFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        function randomFood(min, max) {
+            return Math.floor((Math.random() * (max - min) + min) / grid) * grid;
+        }
+
+        function createFood() {
+            food.x = randomFood(0, snakeCanvas.width - grid);
+            food.y = randomFood(0, snakeCanvas.height - grid);
+            snake.forEach(part => {
+                if (part.x === food.x && part.y === food.y) createFood();
+            });
+        }
+
+        function drawFood() {
+            snakeCtx.fillStyle = '#ef4444';
+            snakeCtx.shadowColor = '#ef4444';
+            snakeCtx.shadowBlur = 10;
+            snakeCtx.fillRect(food.x, food.y, grid - 2, grid - 2);
+            snakeCtx.shadowBlur = 0;
+        }
+
+        function checkSnakeGameOver() {
+            for (let i = 4; i < snake.length; i++) {
+                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) return true;
+            }
+            return (snake[0].x < 0 || snake[0].x >= snakeCanvas.width || snake[0].y < 0 || snake[0].y >= snakeCanvas.height);
+        }
+
+        function handleSnakeGameOver() {
+            snakeRunning = false;
+            const overlay = document.getElementById('snake-overlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => overlay.style.opacity = '1', 10);
+            overlay.querySelector('h3').innerText = 'ИГРА ОКОНЧЕНА';
+            overlay.querySelector('p').innerText = `Ваш результат: ${snakeScore}. Попробуйте снова!`;
+        }
+
+        function setSnakeDir(dir) {
+            if (dir === 'UP' && dy === 0) { dx = 0; dy = -grid; }
+            if (dir === 'DOWN' && dy === 0) { dx = 0; dy = grid; }
+            if (dir === 'LEFT' && dx === 0) { dx = -grid; dy = 0; }
+            if (dir === 'RIGHT' && dx === 0) { dx = grid; dy = 0; }
+        }
+
+        document.addEventListener('keydown', e => {
+            if (['ArrowUp', 'KeyW'].includes(e.code)) { e.preventDefault(); setSnakeDir('UP'); }
+            if (['ArrowDown', 'KeyS'].includes(e.code)) { e.preventDefault(); setSnakeDir('DOWN'); }
+            if (['ArrowLeft', 'KeyA'].includes(e.code)) { e.preventDefault(); setSnakeDir('LEFT'); }
+            if (['ArrowRight', 'KeyD'].includes(e.code)) { e.preventDefault(); setSnakeDir('RIGHT'); }
+        });
+
+
+        // --- PONG GAME LOGIC ---
+        const pongCanvas = document.getElementById('pongCanvas');
+        const pongCtx = pongCanvas.getContext('2d');
+        let pongRunning = false;
+        let pScore = 0, aiScore = 0;
+
+        const paddleWidth = 10, paddleHeight = 60;
+        let player = { x: 20, y: 120, score: 0 };
+        let ai = { x: 470, y: 120, score: 0 };
+        let ball = { x: 250, y: 150, radius: 8, speedX: 4, speedY: 3 };
+
+        function startPongGame() {
+            pScore = 0; aiScore = 0;
+            document.getElementById('pong-score-player').innerText = pScore;
+            document.getElementById('pong-score-ai').innerText = aiScore;
+            document.getElementById('pong-overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('pong-overlay').style.display = 'none', 300);
+            resetBall();
+            pongRunning = true;
+            mainPongLoop();
+        }
+
+        function resetBall() {
+            ball.x = pongCanvas.width / 2;
+            ball.y = pongCanvas.height / 2;
+            ball.speedX = -ball.speedX;
+            ball.speedY = (Math.random() - 0.5) * 6;
+        }
+
+        function mainPongLoop() {
+            if (!pongRunning) return;
+            updatePong();
+            drawPong();
+            requestAnimationFrame(mainPongLoop);
+        }
+
+        function updatePong() {
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+
+            // Wall collisions (top/bottom)
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > pongCanvas.height) {
+                ball.speedY = -ball.speedY;
+            }
+
+            // AI tracking
+            ai.y += (ball.y - (ai.y + paddleHeight / 2)) * 0.08;
+            ai.y = Math.max(0, Math.min(pongCanvas.height - paddleHeight, ai.y));
+
+            // Paddle collisions
+            if (ball.x - ball.radius < player.x + paddleWidth && ball.y > player.y && ball.y < player.y + paddleHeight) {
+                ball.speedX = -ball.speedX * 1.05;
+                let deltaY = ball.y - (player.y + paddleHeight / 2);
+                ball.speedY = deltaY * 0.2;
+            }
+            if (ball.x + ball.radius > ai.x && ball.y > ai.y && ball.y < ai.y + paddleHeight) {
+                ball.speedX = -ball.speedX * 1.05;
+                let deltaY = ball.y - (ai.y + paddleHeight / 2);
+                ball.speedY = deltaY * 0.2;
+            }
+
+            // Scoring
+            if (ball.x < 0) {
+                aiScore++;
+                document.getElementById('pong-score-ai').innerText = aiScore;
+                resetBall();
+            } else if (ball.x > pongCanvas.width) {
+                pScore++;
+                document.getElementById('pong-score-player').innerText = pScore;
+                resetBall();
+            }
+        }
+
+        function drawPong() {
+            pongCtx.fillStyle = '#090d16';
+            pongCtx.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
+
+            // Center net
+            pongCtx.strokeStyle = '#1e293b';
+            pongCtx.setLineDash([5, 15]);
+            pongCtx.beginPath();
+            pongCtx.moveTo(pongCanvas.width / 2, 0);
+            pongCtx.lineTo(pongCanvas.width / 2, pongCanvas.height);
+            pongCtx.stroke();
+            pongCtx.setLineDash([]);
+
+            // Paddles & Ball
+            pongCtx.fillStyle = '#3b82f6';
+            pongCtx.fillRect(player.x, player.y, paddleWidth, paddleHeight);
+            pongCtx.fillStyle = '#ef4444';
+            pongCtx.fillRect(ai.x, ai.y, paddleWidth, paddleHeight);
+
+            pongCtx.fillStyle = '#f8fafc';
+            pongCtx.beginPath();
+            pongCtx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            pongCtx.fill();
+        }
+
+        pongCanvas.addEventListener('mousemove', e => {
+            const rect = pongCanvas.getBoundingClientRect();
+            let rootY = e.clientY - rect.top;
+            player.y = rootY - paddleHeight / 2;
+            player.y = Math.max(0, Math.min(pongCanvas.height - paddleHeight, player.y));
+        });
+
+        // Touch control for pong
+        pongCanvas.addEventListener('touchmove', e => {
+            const rect = pongCanvas.getBoundingClientRect();
+            let rootY = e.touches[0].clientY - rect.top;
+            player.y = rootY - paddleHeight / 2;
+            player.y = Math.max(0, Math.min(pongCanvas.height - paddleHeight, player.y));
+            e.preventDefault();
+        }, {passive: false});
+
+
+        // --- TIC-TAC-TOE GAME LOGIC ---
+        let tttBoard = ['', '', '', '', '', '', '', '', ''];
+        let tttIsXTurn = true;
+        let tttGameActive = true;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function makeTTTMove(index) {
+            if (tttBoard[index] !== '' || !tttGameActive) return;
+
+            tttBoard[index] = tttIsXTurn ? 'X' : 'O';
+            updateTTTUI();
+            checkTTTWinner();
+
+            if (tttGameActive && !tttIsXTurn) {
+                // Simple AI turn
+                setTimeout(aiTTTMove, 300);
+            }
+        }
+
+        function aiTTTMove() {
+            if (!tttGameActive) return;
+            let emptyCells = [];
+            tttBoard.forEach((val, idx) => { if (val === '') emptyCells.push(idx); });
+            if (emptyCells.length === 0) return;
+
+            let randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            tttBoard[randomCell] = 'O';
+            tttIsXTurn = true;
+            updateTTTUI();
+            checkTTTWinner();
+        }
+
+        function updateTTTUI() {
+            const cells = document.querySelectorAll('.ttt-cell');
+            cells.forEach((cell, idx) => {
+                cell.innerText = tttBoard[idx];
+                cell.className = "ttt-cell bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-3xl font-bold flex items-center justify-center transition " + 
+                    (tttBoard[idx] === 'X' ? 'text-blue-400' : 'text-pink-400');
+            });
+            document.getElementById('ttt-status').innerText = tttGameActive ? (tttIsXTurn ? "Ход: Игрок (X)" : "Ход бота (O)") : "Игра завершена";
+        }
+
+        function checkTTTWinner() {
+            let roundWon = false;
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[a] === tttBoard[c]) {
+                    roundWon = true;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                document.getElementById('ttt-status').innerText = `Победил ${tttIsXTurn ? 'Игрок (X)' : 'Бот (O)'}!`;
+                tttGameActive = false;
+                return;
+            }
+
+            if (!tttBoard.includes('')) {
+                document.getElementById('ttt-status').innerText = "Ничья!";
+                tttGameActive = false;
+                return;
+            }
+
+            tttIsXTurn = !tttIsXTurn;
+        }
+
+        function resetTTT() {
+            tttBoard = ['', '', '', '', '', '', '', '', ''];
+            tttIsXTurn = true;
+            tttGameActive = true;
+            updateTTTUI();
+        }
+    </script>
+</body>
+</html>
